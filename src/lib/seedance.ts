@@ -1,20 +1,24 @@
+import { summarizeTracks, type TrackRef } from "./prompt-utils";
+
 const FAL_ENDPOINT = "https://fal.run/bytedance/seedance-2.0/fast/text-to-video";
 
 export function isSeedanceEnabled(): boolean {
   return Boolean(process.env.SEEDANCE_API_KEY);
 }
 
+// 개별 곡이 아니라 믹스(플레이리스트) 전체를 대표하는 영상 1개를 만든다.
 // 시덴스는 초당 과금되는 유료 API라 실제 소비되는 가장 저렴한 옵션(fast/480p)만 사용한다.
 export function buildVideoPrompt(
-  trackName: string,
-  artists: string,
+  mixName: string,
+  tracks: TrackRef[],
   moodNote?: string
 ): string {
   return [
-    `Abstract, atmospheric looping background video capturing the mood of the song "${trackName}" by ${artists}.`,
+    `Abstract, atmospheric looping background video capturing the overall mood of a curated music mix called "${mixName}".`,
+    `The mix contains songs like: ${summarizeTracks(tracks)}.`,
     moodNote ? `Mood/style notes: ${moodNote}.` : "",
     "No real people, celebrity likeness, logos, or text on screen.",
-    "Slow, ambient camera movement suitable as a YouTube background visual.",
+    "Slow, ambient camera movement suitable as a YouTube background visual for the whole mix.",
   ]
     .filter(Boolean)
     .join(" ");

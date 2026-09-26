@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { summarizeTracks, type TrackRef } from "./prompt-utils";
 
 function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -6,17 +7,19 @@ function getClient() {
   return new GoogleGenAI({ apiKey });
 }
 
+// 개별 곡이 아니라 믹스(플레이리스트) 전체를 대표하는 비주얼 1장을 만든다.
 // 실제 아티스트의 얼굴/초상을 생성하지 않도록 분위기·색감 중심의 추상적 비주얼만 요청한다.
 export function buildImagePrompt(
-  trackName: string,
-  artists: string,
+  mixName: string,
+  tracks: TrackRef[],
   moodNote?: string
 ): string {
   return [
-    `Abstract, atmospheric album-art style background visual inspired by the mood of the song "${trackName}" by ${artists}.`,
+    `Abstract, atmospheric cover-art style background visual for a curated music mix/playlist called "${mixName}".`,
+    `The mix contains songs like: ${summarizeTracks(tracks)}.`,
     moodNote ? `Mood/style notes: ${moodNote}.` : "",
     "Do not depict any real person, celebrity likeness, band members, logos, or text.",
-    "Focus on color, light, texture and abstract shapes suitable as a looping YouTube background visual.",
+    "Focus on color, light, texture and abstract shapes suitable as a looping YouTube background visual for the whole mix.",
     "16:9 cinematic composition.",
   ]
     .filter(Boolean)

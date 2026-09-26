@@ -11,14 +11,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { trackId, trackName, artists, moodNote, durationSeconds } = await req.json();
-    if (!trackId || !trackName) {
-      return NextResponse.json({ error: "trackId, trackName은 필수입니다." }, { status: 400 });
+    const { mixId, mixName, tracks, moodNote, durationSeconds } = await req.json();
+    if (!mixId || !mixName) {
+      return NextResponse.json({ error: "mixId, mixName은 필수입니다." }, { status: 400 });
     }
 
-    const prompt = buildVideoPrompt(trackName, artists ?? "", moodNote);
+    const prompt = buildVideoPrompt(mixName, tracks ?? [], moodNote);
     const buffer = await generateTrackVideo(prompt, durationSeconds ?? 5);
-    const url = await saveMediaFile(trackId, "video", buffer, "mp4");
+    const url = await saveMediaFile(mixId, "video", buffer, "mp4");
 
     return NextResponse.json({ url, prompt });
   } catch (e: any) {

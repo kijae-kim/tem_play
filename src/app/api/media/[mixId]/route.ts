@@ -3,9 +3,9 @@ import { listTrackMedia } from "@/lib/media-store";
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ trackId: string }> }
+  { params }: { params: Promise<{ mixId: string }> }
 ) {
-  const { trackId } = await params;
-  const media = await listTrackMedia(trackId);
+  const { mixId } = await params;
+  const media = await listTrackMedia(mixId);
   return NextResponse.json(media);
 }

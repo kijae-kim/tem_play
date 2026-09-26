@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import TrackMediaPanel from "./TrackMediaPanel";
+import Link from "next/link";
 
 interface PlaylistSummary {
   id: string;
@@ -16,6 +16,12 @@ interface TrackInfo {
   artists: string;
   albumImageUrl: string | null;
   durationMs: number;
+}
+
+interface MixSummary {
+  id: string;
+  name: string;
+  tracks: TrackInfo[];
 }
 
 function formatDuration(ms: number) {
@@ -33,7 +39,10 @@ export default function PlaylistsPage() {
   const [tracks, setTracks] = useState<TrackInfo[]>([]);
   const [view, setView] = useState<"playlists" | "recent">("playlists");
   const [error, setError] = useState<string | null>(null);
-  const [expandedTrackId, setExpandedTrackId] = useState<string | null>(null);
+
+  const [mixes, setMixes] = useState<MixSummary[]>([]);
+  const [selectedMixId, setSelectedMixId] = useState<string>("");
+  const [addedTrackIds, setAddedTrackIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch("/api/spotify/playlists")
@@ -48,7 +57,50 @@ export default function PlaylistsPage() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+
+    refreshMixes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 마운트 시 1회만 로드
   }, []);
+
+  async function refreshMixes() {
+    const res = await fetch("/api/mixes");
+    if (res.ok) {
+      const data = await res.json();
+      setMixes(data.mixes);
+      if (!selectedMixId && data.mixes.length > 0) {
+        setSelectedMixId(data.mixes[0].id);
+      }
+    }
+  }
+
+  async function createMix() {
+    const name = window.prompt("새 믹스 이름을 입력하세요");
+    if (!name) return;
+    const res = await fetch("/api/mixes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      await refreshMixes();
+      setSelectedMixId(data.mix.id);
+    }
+  }
+
+  async function addTracksToSelectedMix(tracksToAdd: TrackInfo[]) {
+    if (!selectedMixId) {
+      alert("먼저 믹스를 선택하거나 새로 만들어주세요.");
+      return;
+    }
+    await fetch(`/api/mixes/${selectedMixId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ addTracks: tracksToAdd }),
+    });
+    setAddedTrackIds((prev) => new Set([...prev, ...tracksToAdd.map((t) => t.id)]));
+    refreshMixes();
+  }
 
   async function openPlaylist(playlist: PlaylistSummary) {
     setSelected(playlist);
@@ -99,6 +151,9 @@ export default function PlaylistsPage() {
   return (
     <main className="p-8 grid grid-cols-[280px_1fr] gap-8 min-h-screen">
       <aside className="flex flex-col gap-2">
+        <Link href="/mixes" className="text-sm text-blue-600 hover:underline mb-2">
+          내 믹스 관리 →
+        </Link>
         <button
           onClick={loadRecentlyPlayed}
           className={`text-left px-3 py-2 rounded-lg ${
@@ -129,29 +184,55 @@ export default function PlaylistsPage() {
 
       <section>
         {error && <p className="text-red-600 mb-4">{error}</p>}
+
+        <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+          <span className="text-sm text-gray-500">담을 믹스:</span>
+          <select
+            value={selectedMixId}
+            onChange={(e) => setSelectedMixId(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          >
+            <option value="">선택 안 함</option>
+            {mixes.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name} ({m.tracks.length})
+              </option>
+            ))}
+          </select>
+          <button onClick={createMix} className="text-sm text-blue-600 hover:underline">
+            + 새 믹스
+          </button>
+          {tracks.length > 0 && (
+            <button
+              onClick={() => addTracksToSelectedMix(tracks)}
+              className="ml-auto rounded-full bg-black text-white text-sm px-4 py-1.5"
+            >
+              현재 목록 전체 담기 ({tracks.length}곡)
+            </button>
+          )}
+        </div>
+
         {!selected && view !== "recent" && (
           <p className="text-gray-500">왼쪽에서 플레이리스트를 선택하세요.</p>
         )}
         <ul className="flex flex-col gap-2">
           {tracks.map((t) => (
-            <li key={t.id}>
-              <button
-                onClick={() => setExpandedTrackId(expandedTrackId === t.id ? null : t.id)}
-                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 text-left"
-              >
-                {t.albumImageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.albumImageUrl} alt="" className="w-10 h-10 rounded object-cover" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="truncate font-medium">{t.name}</div>
-                  <div className="truncate text-sm text-gray-500">{t.artists}</div>
-                </div>
-                <div className="text-sm text-gray-400">{formatDuration(t.durationMs)}</div>
-              </button>
-              {expandedTrackId === t.id && (
-                <TrackMediaPanel trackId={t.id} trackName={t.name} artists={t.artists} />
+            <li key={t.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+              {t.albumImageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={t.albumImageUrl} alt="" className="w-10 h-10 rounded object-cover" />
               )}
+              <div className="flex-1 min-w-0">
+                <div className="truncate font-medium">{t.name}</div>
+                <div className="truncate text-sm text-gray-500">{t.artists}</div>
+              </div>
+              <div className="text-sm text-gray-400">{formatDuration(t.durationMs)}</div>
+              <button
+                onClick={() => addTracksToSelectedMix([t])}
+                className="text-sm rounded-full border px-3 py-1 hover:bg-gray-100"
+              >
+                {addedTrackIds.has(t.id) ? "담김 ✓" : "+ 담기"}
+              </button>
             </li>
           ))}
         </ul>
