@@ -154,7 +154,13 @@ export default function MixDetailPage({ params }: { params: Promise<{ id: string
         tracks={mix.tracks.map((t) => ({ name: t.name, artists: t.artists }))}
       />
 
-      <RenderPanel mixId={mix.id} audioReadyCount={audioReadyCount} totalTracks={mix.tracks.length} />
+      <RenderPanel
+        mixId={mix.id}
+        mixName={mix.name}
+        tracks={mix.tracks.map((t) => ({ name: t.name, artists: t.artists }))}
+        audioReadyCount={audioReadyCount}
+        totalTracks={mix.tracks.length}
+      />
     </main>
   );
 }

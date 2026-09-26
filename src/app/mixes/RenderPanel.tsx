@@ -1,14 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import YoutubeUpload from "./YoutubeUpload";
+
+interface TrackRef {
+  name: string;
+  artists: string;
+}
 
 interface Props {
   mixId: string;
+  mixName: string;
+  tracks: TrackRef[];
   audioReadyCount: number;
   totalTracks: number;
 }
 
-export default function RenderPanel({ mixId, audioReadyCount, totalTracks }: Props) {
+export default function RenderPanel({
+  mixId,
+  mixName,
+  tracks,
+  audioReadyCount,
+  totalTracks,
+}: Props) {
   const [videos, setVideos] = useState<string[]>([]);
   const [rendering, setRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +56,8 @@ export default function RenderPanel({ mixId, audioReadyCount, totalTracks }: Pro
     }
   }
 
+  const defaultDescription = tracks.map((t) => `${t.name} - ${t.artists}`).join("\n");
+
   return (
     <div className="bg-gray-50 rounded-lg p-4 flex flex-col gap-3">
       <h3 className="font-medium">최종 영상 만들기</h3>
@@ -66,11 +82,17 @@ export default function RenderPanel({ mixId, audioReadyCount, totalTracks }: Pro
             .slice()
             .reverse()
             .map((v) => (
-              <div key={v} className="flex flex-col gap-1">
+              <div key={v} className="flex flex-col gap-2">
                 <video src={v} controls className="w-full rounded" />
                 <a href={v} download className="text-sm text-blue-600 hover:underline">
                   다운로드
                 </a>
+                <YoutubeUpload
+                  mixId={mixId}
+                  videoUrl={v}
+                  defaultTitle={mixName}
+                  defaultDescription={defaultDescription}
+                />
               </div>
             ))}
         </div>
