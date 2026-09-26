@@ -8,19 +8,24 @@ function getClient() {
 }
 
 // 개별 곡이 아니라 믹스(플레이리스트) 전체를 대표하는 비주얼 1장을 만든다.
-// 실제 아티스트의 얼굴/초상을 생성하지 않도록 분위기·색감 중심의 추상적 비주얼만 요청한다.
+// moodNote로 영화/소설/드라마/애니메이션/웹툰 장면을 참고해달라고 적을 수 있는데,
+// 이 경우 그 장면을 그대로 베끼지 않고 분위기만 딴 "재해석"을 만들도록 지시한다.
+// 실제 배우/유명인의 얼굴은 절대 생성하지 않지만, 장면에 어울리는 가상의 인물 실루엣은 허용한다.
 export function buildImagePrompt(
   mixName: string,
   tracks: TrackRef[],
   moodNote?: string
 ): string {
   return [
-    `Abstract, atmospheric cover-art style background visual for a curated music mix/playlist called "${mixName}".`,
+    `Cinematic, illustrated cover-art style background visual for a curated music mix/playlist called "${mixName}".`,
     `The mix contains songs like: ${summarizeTracks(tracks)}.`,
-    moodNote ? `Mood/style notes: ${moodNote}.` : "",
-    "Do not depict any real person, celebrity likeness, band members, logos, or text.",
-    "Focus on color, light, texture and abstract shapes suitable as a looping YouTube background visual for the whole mix.",
-    "16:9 cinematic composition.",
+    moodNote
+      ? `Style/scene reference: ${moodNote}. Create an original illustrated reinterpretation inspired by that mood, genre, and color palette — do not reproduce any exact shot, frame, or copyrighted artwork.`
+      : "",
+    "Do not depict any real actor, celebrity, or identifiable real person's likeness, and do not include any logos or watermarks.",
+    "Fictional, anonymous human silhouettes or characters are fine when they fit the scene.",
+    "No on-image text.",
+    "16:9 cinematic composition suitable as a looping YouTube background visual for the whole mix.",
   ]
     .filter(Boolean)
     .join(" ");

@@ -109,11 +109,15 @@ export default function MixMediaPanel({ mixId, mixName, tracks }: Props) {
       <h3 className="font-medium">이 믹스의 비주얼</h3>
       <input
         type="text"
-        placeholder="무드/스타일 메모 (선택, 예: 몽환적인 네온 컬러, 비 내리는 도시)"
+        placeholder="장면/스타일 참고 (선택, 예: 영화 인터스텔라 우주 장면 느낌, 지브리풍 비 내리는 시골, 웹툰풍 도시 야경)"
         value={moodNote}
         onChange={(e) => setMoodNote(e.target.value)}
         className="border rounded px-3 py-2 text-sm"
       />
+      <p className="text-xs text-gray-400 -mt-2">
+        특정 영화/드라마/애니메이션/웹툰 장면을 언급하면 그대로 베끼지 않고 분위기만 참고해서
+        새로 그려줍니다. 실제 배우/유명인의 얼굴은 생성하지 않습니다.
+      </p>
 
       <div className="flex flex-wrap gap-2">
         <button

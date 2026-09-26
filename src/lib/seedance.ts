@@ -7,6 +7,8 @@ export function isSeedanceEnabled(): boolean {
 }
 
 // 개별 곡이 아니라 믹스(플레이리스트) 전체를 대표하는 영상 1개를 만든다.
+// moodNote로 영화/소설/드라마/애니메이션/웹툰 장면을 참고해달라고 적을 수 있는데,
+// 이 경우 그 장면을 그대로 베끼지 않고 분위기만 딴 "재해석"을 만들도록 지시한다.
 // 시덴스는 초당 과금되는 유료 API라 실제 소비되는 가장 저렴한 옵션(fast/480p)만 사용한다.
 export function buildVideoPrompt(
   mixName: string,
@@ -14,10 +16,13 @@ export function buildVideoPrompt(
   moodNote?: string
 ): string {
   return [
-    `Abstract, atmospheric looping background video capturing the overall mood of a curated music mix called "${mixName}".`,
+    `Cinematic, illustrated looping background video capturing the overall mood of a curated music mix called "${mixName}".`,
     `The mix contains songs like: ${summarizeTracks(tracks)}.`,
-    moodNote ? `Mood/style notes: ${moodNote}.` : "",
-    "No real people, celebrity likeness, logos, or text on screen.",
+    moodNote
+      ? `Style/scene reference: ${moodNote}. Create an original reinterpretation inspired by that mood, genre, and color palette — do not reproduce any exact shot or copyrighted footage.`
+      : "",
+    "Do not depict any real actor, celebrity, or identifiable real person's likeness, and no logos or on-screen text.",
+    "Fictional, anonymous human silhouettes or characters are fine when they fit the scene.",
     "Slow, ambient camera movement suitable as a YouTube background visual for the whole mix.",
   ]
     .filter(Boolean)
