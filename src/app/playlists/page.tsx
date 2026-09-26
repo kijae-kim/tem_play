@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import TrackMediaPanel from "./TrackMediaPanel";
 
 interface PlaylistSummary {
   id: string;
@@ -32,6 +33,7 @@ export default function PlaylistsPage() {
   const [tracks, setTracks] = useState<TrackInfo[]>([]);
   const [view, setView] = useState<"playlists" | "recent">("playlists");
   const [error, setError] = useState<string | null>(null);
+  const [expandedTrackId, setExpandedTrackId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/spotify/playlists")
@@ -132,16 +134,24 @@ export default function PlaylistsPage() {
         )}
         <ul className="flex flex-col gap-2">
           {tracks.map((t) => (
-            <li key={t.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-              {t.albumImageUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={t.albumImageUrl} alt="" className="w-10 h-10 rounded object-cover" />
+            <li key={t.id}>
+              <button
+                onClick={() => setExpandedTrackId(expandedTrackId === t.id ? null : t.id)}
+                className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 text-left"
+              >
+                {t.albumImageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={t.albumImageUrl} alt="" className="w-10 h-10 rounded object-cover" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="truncate font-medium">{t.name}</div>
+                  <div className="truncate text-sm text-gray-500">{t.artists}</div>
+                </div>
+                <div className="text-sm text-gray-400">{formatDuration(t.durationMs)}</div>
+              </button>
+              {expandedTrackId === t.id && (
+                <TrackMediaPanel trackId={t.id} trackName={t.name} artists={t.artists} />
               )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate font-medium">{t.name}</div>
-                <div className="truncate text-sm text-gray-500">{t.artists}</div>
-              </div>
-              <div className="text-sm text-gray-400">{formatDuration(t.durationMs)}</div>
             </li>
           ))}
         </ul>
