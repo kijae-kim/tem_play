@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import MixMediaPanel from "../MixMediaPanel";
+import RenderPanel from "../RenderPanel";
 
 interface MixTrack {
   id: string;
@@ -10,6 +11,7 @@ interface MixTrack {
   artists: string;
   albumImageUrl: string | null;
   durationMs: number;
+  audioUrl?: string;
 }
 
 interface Mix {
@@ -31,6 +33,7 @@ export default function MixDetailPage({ params }: { params: Promise<{ id: string
   const [mix, setMix] = useState<Mix | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [uploadingTrackId, setUploadingTrackId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/mixes/${id}`)
@@ -68,9 +71,26 @@ export default function MixDetailPage({ params }: { params: Promise<{ id: string
     setMix(data.mix);
   }
 
+  async function attachAudio(trackId: string, file: File) {
+    setUploadingTrackId(trackId);
+    try {
+      const form = new FormData();
+      form.set("trackId", trackId);
+      form.set("file", file);
+      const res = await fetch(`/api/mixes/${id}/audio`, { method: "POST", body: form });
+      const data = await res.json();
+      if (res.ok) setMix(data.mix);
+      else alert(data.error ?? "오디오 업로드 실패");
+    } finally {
+      setUploadingTrackId(null);
+    }
+  }
+
   if (loading) return <main className="p-8">불러오는 중...</main>;
   if (notFound) return <main className="p-8">믹스를 찾을 수 없습니다.</main>;
   if (!mix) return null;
+
+  const audioReadyCount = mix.tracks.filter((t) => t.audioUrl).length;
 
   return (
     <main className="p-8 max-w-2xl mx-auto flex flex-col gap-6">
@@ -102,6 +122,19 @@ export default function MixDetailPage({ params }: { params: Promise<{ id: string
               <div className="truncate text-sm text-gray-500">{t.artists}</div>
             </div>
             <div className="text-sm text-gray-400">{formatDuration(t.durationMs)}</div>
+            <label className="text-sm rounded-full border px-3 py-1 hover:bg-gray-100 cursor-pointer">
+              {uploadingTrackId === t.id ? "업로드 중..." : t.audioUrl ? "음원 🎵 ✓" : "음원 붙이기"}
+              <input
+                type="file"
+                accept="audio/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) attachAudio(t.id, file);
+                }}
+              />
+            </label>
             <button
               onClick={() => removeTrack(t.id)}
               className="text-sm text-red-600 hover:underline"
@@ -120,6 +153,8 @@ export default function MixDetailPage({ params }: { params: Promise<{ id: string
         mixName={mix.name}
         tracks={mix.tracks.map((t) => ({ name: t.name, artists: t.artists }))}
       />
+
+      <RenderPanel mixId={mix.id} audioReadyCount={audioReadyCount} totalTracks={mix.tracks.length} />
     </main>
   );
 }

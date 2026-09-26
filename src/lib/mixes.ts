@@ -10,6 +10,9 @@ export interface MixTrack {
   artists: string;
   albumImageUrl: string | null;
   durationMs: number;
+  // 스포티파이 음원은 못 가져오므로, 실제 영상 합성에 쓸 로열티프리 대체 음원을
+  // 사용자가 직접 업로드하면 여기 경로가 채워진다.
+  audioUrl?: string;
 }
 
 export interface Mix {
@@ -82,6 +85,20 @@ export async function addTracksToMix(id: string, tracks: MixTrack[]): Promise<Mi
       existingIds.add(t.id);
     }
   }
+  await saveMix(mix);
+  return mix;
+}
+
+export async function setTrackAudio(
+  id: string,
+  trackId: string,
+  audioUrl: string
+): Promise<Mix | null> {
+  const mix = await getMix(id);
+  if (!mix) return null;
+  const track = mix.tracks.find((t) => t.id === trackId);
+  if (!track) return null;
+  track.audioUrl = audioUrl;
   await saveMix(mix);
   return mix;
 }
